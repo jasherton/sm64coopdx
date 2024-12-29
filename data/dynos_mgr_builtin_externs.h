@@ -1543,6 +1543,8 @@ extern ALIGNED8 const Texture texture_font_aliased[];
 extern ALIGNED8 const Texture texture_font_title[];
 extern ALIGNED8 const Texture texture_font_hud[];
 extern ALIGNED8 const Texture texture_font_hud_recolor[];
+extern ALIGNED8 const Texture texture_font_jp[];
+extern ALIGNED8 const Texture texture_font_jp_aliased[];
 extern ALIGNED8 const Texture texture_coopdx_logo[];
 extern ALIGNED8 const Texture pss_seg7_texture_07000000[];
 extern ALIGNED8 const Texture pss_seg7_texture_07000800[];
