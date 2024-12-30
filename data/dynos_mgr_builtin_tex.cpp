@@ -1145,7 +1145,6 @@ static const struct BuiltinTexInfo sDynosBuiltinTexs[] = {
     define_builtin_tex(texture_font_title, "textures/custom_font/custom_font_title.rgba32.png", 1024, 512, 32),
     define_builtin_tex(texture_font_hud, "textures/custom_font/custom_font_normal.rgba32.png", 512, 512, 32),
     define_builtin_tex(texture_font_hud_recolor, "textures/custom_font/custom_font_aliased.rgba32.png", 512, 512, 32),
-    define_builtin_tex(texture_font_special, "textures/custom_font/custom_font_special.rgba32.png", 512, 512, 32),
     define_builtin_tex(texture_font_jp, "textures/custom_font/custom_font_jp.rgba32.png", 512, 1024, 32),
     define_builtin_tex(texture_font_jp_aliased, "textures/custom_font/custom_font_jp_aliased.rgba32.png", 1024, 2048, 32),
 
