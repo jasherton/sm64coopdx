@@ -32,6 +32,7 @@ struct CLIOptions {
 	char coopnetPass[64];
     bool hideLoadingScreen;
     bool skipUpdateCheck;
+    bool noDiscord;
 };
 
 extern struct CLIOptions gCLIOpts;

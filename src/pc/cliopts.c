@@ -27,6 +27,7 @@ static void print_help(void) {
     printf("--client IP PORT        Starts the game and joins an existing server.\n");
     printf("--playername PLAYERNAME Starts the game with a specific playername.\n");
     printf("--skip-update-check     Skips the update check when loading the game.\n");
+    printf("--no-discord            Disables discord integration.");
 }
 
 static inline int arg_string(const char *name, const char *value, char *target, int maxLength) {
@@ -93,6 +94,8 @@ bool parse_cli_opts(int argc, char* argv[]) {
 			arg_string("--serverpass", argv[++i], gCLIOpts.coopnetPass, 64);
         } else if (!strcmp(argv[i], "--skip-update-check")) {
             gCLIOpts.skipUpdateCheck = true;
+        } else if (!strcmp(argv[i], "--no-discord")) {
+            gCLIOpts.noDiscord = true;
         } else if (!strcmp(argv[i], "--help")) {
             print_help();
             return false;
