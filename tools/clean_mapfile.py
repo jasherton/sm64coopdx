@@ -6,14 +6,14 @@ import os
 import re
 import json
 
-def extract_int(b: bytes, offset: int, size: int) -> int:
+def extract_int(b, offset, size):
     return int.from_bytes(b[offset:(offset+size)], 'little')
 
-def parse_exe_sections(exe_path: str) -> list[dict]:
+def parse_exe_sections(exe_path):
     print(f'* Parsing sections from EXE: "{exe_path}"')
 
     with open(exe_path, 'rb') as f:
-        b: bytes = f.read(4096)
+        b = f.read(4096)
 
     if b[0:(0+2)] != b'MZ':
         raise ValueError(f'"{exe_path}": no MZ header')
@@ -54,7 +54,7 @@ def parse_exe_sections(exe_path: str) -> list[dict]:
 
     return sections
 
-def parse_map_file(map_path: str, module_name: str, sections: list[dict]) -> dict:
+def parse_map_file(map_path, module_name, sections):
     print(f'* Parsing and cleaning the MAP file: "{map_path}"')
 
     with open(map_path, 'rt', encoding='ascii') as f:
