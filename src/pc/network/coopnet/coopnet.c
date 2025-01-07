@@ -15,11 +15,6 @@
 
 #ifdef COOPNET
 
-// ! Temporary, show this build of coop as sm64ex-coop
-// to let other players know the update is out
-#undef GAME_NAME
-#define GAME_NAME "sm64ex-coop"
-
 #define MAX_COOPNET_DESCRIPTION_LENGTH 1024
 
 uint64_t gCoopNetDesiredLobby = 0;
@@ -93,7 +88,9 @@ static void coopnet_on_lobby_joined(uint64_t lobbyId, uint64_t userId, uint64_t 
         network_send_mod_list_request();
     }
 #ifdef DISCORD_SDK
-    discord_activity_update();
+    if (gDiscordInitialized) {
+        discord_activity_update();
+    }
 #endif
 }
 
@@ -180,23 +177,12 @@ static void coopnet_populate_description(void) {
     char* buffer = sCoopNetDescription;
     int bufferLength = MAX_COOPNET_DESCRIPTION_LENGTH;
     // get version
-    const char* version = get_version_online();
+    const char* version = get_version();
     int versionLength = strlen(version);
     snprintf(buffer, bufferLength, "%s", version);
     buffer += versionLength;
     bufferLength -= versionLength;
-	
-	//this will probably result in a buffer overflow
-	int customDescLen = strlen(gCLIOpts.coopnetDesc);
-	if (customDescLen > 0) {
-		snprintf(buffer, bufferLength, "\n\n");
-		buffer += 2;
-		bufferLength -= 2;
-		snprintf(buffer, bufferLength, "%s", gCLIOpts.coopnetDesc);
-		buffer += customDescLen;
-		bufferLength -= customDescLen;
-	}
-	
+
     // get mod strings
     if (gActiveMods.entryCount <= 0) { return; }
     char* strings[gActiveMods.entryCount];
@@ -215,10 +201,6 @@ static void coopnet_populate_description(void) {
     str_seperator_concat(buffer, bufferLength, strings, gActiveMods.entryCount, "\\#dcdcdc\\\n");
 }
 
-const char* coopnet_ServerName() {
-	return strlen(gCLIOpts.coopnetName) > 0 ? gCLIOpts.coopnetName : configPlayerName;
-}
-
 void ns_coopnet_update(void) {
     if (!coopnet_is_connected()) { return; }
 
@@ -230,12 +212,12 @@ void ns_coopnet_update(void) {
             if (sReconnecting) {
                 LOG_INFO("Update lobby");
                 coopnet_populate_description();
-                coopnet_lobby_update(sLocalLobbyId, GAME_NAME, get_version_online(), coopnet_ServerName(), mode, sCoopNetDescription);
+                coopnet_lobby_update(sLocalLobbyId, GAME_NAME, get_version(), configPlayerName, mode, sCoopNetDescription);
             } else {
                 LOG_INFO("Create lobby");
                 snprintf(gCoopNetPassword, 64, "%s", configPassword);
                 coopnet_populate_description();
-                coopnet_lobby_create(GAME_NAME, get_version_online(), coopnet_ServerName(), mode, (uint16_t)configAmountofPlayers, gCoopNetPassword, sCoopNetDescription);
+                coopnet_lobby_create(GAME_NAME, get_version(), configPlayerName, mode, (uint16_t)configAmountofPlayers, gCoopNetPassword, sCoopNetDescription);
             }
         } else if (sNetworkType == NT_CLIENT) {
             LOG_INFO("Join lobby");
@@ -296,13 +278,13 @@ static CoopNetRc coopnet_initialize(void) {
     gCoopNetCallbacks.OnError = coopnet_on_error;
     gCoopNetCallbacks.OnPeerDisconnected = coopnet_on_peer_disconnected;
     gCoopNetCallbacks.OnLoadBalance = coopnet_on_load_balance;
-	
+
     if (coopnet_is_connected()) { return COOPNET_OK; }
 
     char* endptr = NULL;
     uint64_t destId = strtoull(configDestId, &endptr, 10);
 
-    CoopNetRc rc = coopnet_begin(configCoopNetIp, configCoopNetPort, coopnet_ServerName(), destId);
+    CoopNetRc rc = coopnet_begin(configCoopNetIp, configCoopNetPort, configPlayerName, destId);
     if (rc == COOPNET_FAILED) {
         djui_popup_create(DLANG(NOTIF, COOPNET_CONNECTION_FAILED), 2);
     }
