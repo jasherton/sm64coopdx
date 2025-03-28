@@ -104,7 +104,7 @@ bool parse_cli_opts(int argc, char* argv[]) {
 		} else if (!strcmp(argv[i],"--serverdesc") && (i + 1) < argc) {
 			arg_string("--serverdesc", argv[++i], gCLIOpts.coopnetDesc, 1024);
 		} else if (!strcmp(argv[i],"--serverpass") && (i + 1) < argc) {
-			arg_string("--serverpass", argv[++i], gCLIOpts.coopnetPass, 64);
+			arg_string("--serverpass", argv[++i], gCLIOpts.coopnetPassword, MAX_CONFIG_STRING);
         } else if (!strcmp(argv[i], "--playercount") && (i + 1) < argc) {
             arg_uint("--playercount <playercount>", argv[++i], &gCLIOpts.playerCount);
         } else if (!strcmp(argv[i], "--skip-update-check")) {

@@ -297,33 +297,6 @@ void *audio_thread(UNUSED void *arg) {
     return NULL;
 }
 
-void *audio_thread(UNUSED void *arg) {
-    // As long as we have an audio api and that we're threaded, Loop.
-    while (audio_api) {
-        f64 curTime = clock_elapsed_f64();
-
-        // Buffer the audio.
-        lock_mutex(&gAudioThread);
-        buffer_audio();
-        unlock_mutex(&gAudioThread);
-
-        // Delay till the next frame for smooth audio at the correct speed.
-        // delay
-        f64 targetDelta = 1.0 / (f64)FRAMERATE;
-        f64 now = clock_elapsed_f64();
-        f64 actualDelta = now - curTime;
-        if (actualDelta < targetDelta) {
-            f64 delay = ((targetDelta - actualDelta) * 1000.0);
-            WAPI.delay((u32)delay);
-        }
-    }
-
-    // Exit the thread if our loop breaks.
-    exit_thread();
-
-    return NULL;
-}
-
 #include <pthread.h>
 pthread_mutex_t luaMutex = PTHREAD_MUTEX_INITIALIZER;
 

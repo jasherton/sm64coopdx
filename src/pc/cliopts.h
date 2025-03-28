@@ -26,7 +26,6 @@ struct CLIOptions {
     enum NetworkType network;
 	unsigned int netSystemType;
     unsigned int networkPort;
-    unsigned int maxPlayers;
     char joinIp[IP_MAX_LEN];
     char playerName[MAX_CONFIG_STRING];
     unsigned int playerCount;
