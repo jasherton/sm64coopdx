@@ -15,44 +15,44 @@ def parse_exe_sections(exe_path):
     with open(exe_path, 'rb') as f:
         b = f.read(4096)
 
-    if b[0:(0+2)] != b'MZ':
-        raise ValueError(f'"{exe_path}": no MZ header')
+		if b[0:(0+2)] != b'MZ':
+			raise ValueError(f'"{exe_path}": no MZ header')
 
-    pe_offset = extract_int(b, 0x3C, 4)
-    if (pe_offset < 0x40) or (pe_offset > 4096) or (pe_offset & 7):
-        raise ValueError(f'"{exe_path}": bad LfaNew address')
-    if b[pe_offset:(pe_offset+4)] != b'PE\0\0':
-        raise ValueError(f'"{exe_path}": not a valid PE file')
+		pe_offset = extract_int(b, 0x3C, 4)
+		if (pe_offset < 0x40) or (pe_offset > 4096) or (pe_offset & 7):
+			raise ValueError(f'"{exe_path}": bad LfaNew address')
+		if b[pe_offset:(pe_offset+4)] != b'PE\0\0':
+			raise ValueError(f'"{exe_path}": not a valid PE file')
 
-    x = extract_int(b, pe_offset + 4, 2)
-    if x != 0x8664:
-        raise ValueError(f'"{exe_path}": not a x86_64 executable')
+		x = extract_int(b, pe_offset + 4, 2)
+		if x != 0x8664:
+			raise ValueError(f'"{exe_path}": not a x86_64 executable')
 
-    num_sections = extract_int(b, pe_offset + 6, 2)
-    if (num_sections <= 0) or (num_sections > 64):
-        raise ValueError(f'"{exe_path}: bad NumberOfSections')
+		num_sections = extract_int(b, pe_offset + 6, 2)
+		if (num_sections <= 0) or (num_sections > 64):
+			raise ValueError(f'"{exe_path}: bad NumberOfSections')
 
-    x = extract_int(b, pe_offset + 20, 2)
-    if (x <= 0) or (x > 256):
-        raise ValueError(f'"{exe_path}: bad SizeOfOptionalHeader.')
+		x = extract_int(b, pe_offset + 20, 2)
+		if (x <= 0) or (x > 256):
+			raise ValueError(f'"{exe_path}: bad SizeOfOptionalHeader.')
 
-    if extract_int(b, pe_offset + 24, 2) != 0x020B:
-        raise ValueError(f'"{exe_path}": invalid PE32+ signature')
+		if extract_int(b, pe_offset + 24, 2) != 0x020B:
+			raise ValueError(f'"{exe_path}": invalid PE32+ signature')
 
-    sections = []
-    section_table = pe_offset + 24 + x
-    for i in range(num_sections):
-        x = section_table + i * 40
-        # virtual_size = extract_int(b, x + 8, 4)
-        virtual_addr = extract_int(b, x + 12, 4)
-        # size_of_raw_data = extract_int(b, x + 16, 4)
-        # ptr_to_raw_data = extract_int(b, x + 20, 4)
-        flags = extract_int(b, x + 36, 4)
+		sections = []
+		section_table = pe_offset + 24 + x
+		for i in range(num_sections):
+			x = section_table + i * 40
+			# virtual_size = extract_int(b, x + 8, 4)
+			virtual_addr = extract_int(b, x + 12, 4)
+			# size_of_raw_data = extract_int(b, x + 16, 4)
+			# ptr_to_raw_data = extract_int(b, x + 20, 4)
+			flags = extract_int(b, x + 36, 4)
 
-        discardable = bool(0x02000000 & flags)
-        sections.append({ 'virtual_addr': virtual_addr, 'discardable': discardable })
+			discardable = bool(0x02000000 & flags)
+			sections.append({ 'virtual_addr': virtual_addr, 'discardable': discardable })
 
-    return sections
+		return sections
 
 def parse_map_file(map_path, module_name, sections):
     print(f'* Parsing and cleaning the MAP file: "{map_path}"')

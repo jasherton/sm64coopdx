@@ -129,13 +129,14 @@ bool network_init(enum NetworkType inNetworkType, bool reconnecting) {
     gServerSettings.enablePlayersInLevelDisplay = TRUE;
     gServerSettings.enablePlayerList = TRUE;
     gServerSettings.nametags = configNametags;
-    gServerSettings.maxPlayers = configAmountofPlayers;
+    gServerSettings.maxPlayers = configAmountOfPlayers;
     gServerSettings.pauseAnywhere = configPauseAnywhere;
     gServerSettings.pvpType = configPvpType;
+	
 #if defined(RAPI_DUMMY) || defined(WAPI_DUMMY)
-    gServerSettings.headlessServer = (inNetworkType == NT_SERVER);
+	gServerSettings.headlessServer = (inNetworkType == NT_SERVER);
 #else
-    gServerSettings.headlessServer = 0;
+	gServerSettings.headlessServer = gCLIOpts.headless && (inNetworkType == NT_SERVER);
 #endif
 
     gNametagsSettings.showHealth = false;

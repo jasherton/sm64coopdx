@@ -338,6 +338,15 @@ static bool djui_panel_player_name_valid(char* buffer) {
     return true;
 }
 
+static char *djui_panel_player_name_default_get(void) {
+    char *langName = DLANG(PLAYER, PLAYER);
+    if (djui_panel_player_name_valid(langName)) {
+        return langName;
+    }
+    static char *name = "Player";
+    return name;
+}
+
 static void djui_panel_player_name_text_change(struct DjuiBase* caller) {
     struct DjuiInputbox* inputbox1 = (struct DjuiInputbox*)caller;
     if (djui_panel_player_name_valid(inputbox1->buffer)) {
@@ -350,7 +359,7 @@ static void djui_panel_player_name_text_change(struct DjuiBase* caller) {
 static void djui_panel_player_name_on_focus_end(struct DjuiBase* caller) {
     struct DjuiInputbox* inputbox1 = (struct DjuiInputbox*)caller;
     if (!djui_panel_player_name_valid(inputbox1->buffer)) {
-        djui_inputbox_set_text(inputbox1, DLANG(PLAYER, PLAYER));
+        djui_inputbox_set_text(inputbox1, djui_panel_player_name_default_get());
     }
     snprintf(configPlayerName, MAX_CONFIG_STRING, "%s", inputbox1->buffer);
     djui_inputbox_set_text_color(inputbox1, 0, 0, 0, 255);
@@ -428,7 +437,7 @@ void djui_panel_player_create(struct DjuiBase* caller) {
             if (djui_panel_player_name_valid(configPlayerName)) {
                 djui_inputbox_set_text(inputbox1, configPlayerName);
             } else {
-                djui_inputbox_set_text(inputbox1, DLANG(PLAYER, PLAYER));
+                djui_inputbox_set_text(inputbox1, djui_panel_player_name_default_get());
             }
             djui_interactable_hook_value_change(&inputbox1->base, djui_panel_player_name_text_change);
             djui_interactable_hook_focus(&inputbox1->base, djui_inputbox_on_focus_begin, NULL, djui_panel_player_name_on_focus_end);
@@ -441,7 +450,7 @@ void djui_panel_player_create(struct DjuiBase* caller) {
         djui_selectionbox_create(body, DLANG(PLAYER, MODEL), characterChoices, CT_MAX, &configPlayerModel, djui_panel_player_value_changed);
 
         player_palettes_reset();
-        player_palettes_read(sys_exe_path_dir(), true);
+        player_palettes_read(sys_resource_path(), true);
         player_palettes_read(fs_get_write_path(PALETTES_DIRECTORY), false);
 
         char* palettePresets[MAX_PRESET_PALETTES + 1] = { DLANG(PALETTE, CUSTOM) };

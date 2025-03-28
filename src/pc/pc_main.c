@@ -201,14 +201,7 @@ void produce_interpolation_frames_and_delay(void) {
     f64 curTime = clock_elapsed_f64();
     f64 targetTime = sFrameTimeStart + sFrameTime;
     s32 numFramesToDraw = get_num_frames_to_draw(sFrameTimeStart);
-
-    // if the game update took too long, don't interpolate
-    if (targetTime - curTime < sFrameTime / 2) {
-        gRenderingInterpolated = false;
-        is30Fps = true;
-        numFramesToDraw = 1;
-    }
-
+	
     f64 loopStartTime = curTime;
     f64 expectedTime = 0;
 
@@ -275,6 +268,33 @@ inline static void buffer_audio(void) {
         create_next_audio_buffer(sAudioBuffer + i * (numAudioSamples * 2), numAudioSamples);
     }
     audio_api->play((u8 *)sAudioBuffer, 2 * numAudioSamples * 4);
+}
+
+void *audio_thread(UNUSED void *arg) {
+    // As long as we have an audio api and that we're threaded, Loop.
+    while (audio_api) {
+        f64 curTime = clock_elapsed_f64();
+
+        // Buffer the audio.
+        lock_mutex(&gAudioThread);
+        buffer_audio();
+        unlock_mutex(&gAudioThread);
+
+        // Delay till the next frame for smooth audio at the correct speed.
+        // delay
+        f64 targetDelta = 1.0 / (f64)FRAMERATE;
+        f64 now = clock_elapsed_f64();
+        f64 actualDelta = now - curTime;
+        if (actualDelta < targetDelta) {
+            f64 delay = ((targetDelta - actualDelta) * 1000.0);
+            WAPI.delay((u32)delay);
+        }
+    }
+
+    // Exit the thread if our loop breaks.
+    exit_thread();
+
+    return NULL;
 }
 
 void *audio_thread(UNUSED void *arg) {
@@ -411,9 +431,6 @@ void* main_game_init(UNUSED void* dummy) {
         loading_screen_set_segment_text("Starting Game");
     );
 
-    if (gCLIOpts.fullscreen == 1) { configWindow.fullscreen = true; }
-    else if (gCLIOpts.fullscreen == 2) { configWindow.fullscreen = false; }
-
     audio_init();
     sound_init();
     network_player_init();
@@ -457,9 +474,13 @@ int main(int argc, char *argv[]) {
     // handle terminal arguments
     if (!parse_cli_opts(argc, argv)) { return 0; }
 
+#if defined(RAPI_DUMMY) || defined(WAPI_DUMMY)
+    gCLIOpts.headless = true;
+#endif
+
 #ifdef _WIN32
     // handle Windows console
-    if (gCLIOpts.console) {
+    if (gCLIOpts.console || gCLIOpts.headless) {
         SetConsoleOutputCP(CP_UTF8);
     } else {
         FreeConsole();
@@ -477,6 +498,13 @@ int main(int argc, char *argv[]) {
     }
 #else
     fs_init(gCLIOpts.savePath[0] ? gCLIOpts.savePath : sys_user_path());
+#endif
+
+#if !defined(RAPI_DUMMY) && !defined(WAPI_DUMMY)
+    if (gCLIOpts.headless) {
+        memcpy(&WAPI, &gfx_dummy_wm_api, sizeof(struct GfxWindowManagerAPI));
+        memcpy(&RAPI, &gfx_dummy_renderer_api, sizeof(struct GfxRenderingAPI));
+    }
 #endif
 
     configfile_load();
@@ -506,7 +534,7 @@ int main(int argc, char *argv[]) {
     // start the thread for setting up the game
 #ifdef LOADING_SCREEN_SUPPORTED
     bool threadSuccess = false;
-    if (!gCLIOpts.hideLoadingScreen) {
+    if (!gCLIOpts.hideLoadingScreen && !gCLIOpts.headless) {
         if (init_thread_handle(&gLoadingThread, main_game_init, NULL, NULL, 0) == 0) {
             render_loading_screen(); // render the loading screen while the game is setup
             threadSuccess = true;
@@ -523,10 +551,14 @@ int main(int argc, char *argv[]) {
     thread5_game_loop(NULL);
 
     // initialize sound outside threads
+    if (gCLIOpts.headless) audio_api = &audio_null;
 #if defined(AAPI_SDL1) || defined(AAPI_SDL2)
-    if (!audio_api && audio_sdl.init()) { audio_api = &audio_sdl; }
+    if (!audio_api && audio_sdl.init()) audio_api = &audio_sdl;
 #endif
-    if (!audio_api) { audio_api = &audio_null; }
+    if (!audio_api) audio_api = &audio_null;
+
+    // Initialize the audio thread if possible.
+    // init_thread_handle(&gAudioThread, audio_thread, NULL, NULL, 0);
 
     // Initialize the audio thread if possible.
     // init_thread_handle(&gAudioThread, audio_thread, NULL, NULL, 0);
@@ -550,9 +582,14 @@ int main(int argc, char *argv[]) {
         snprintf(configJoinIp, MAX_CONFIG_STRING, "%s", gCLIOpts.joinIp);
         configJoinPort = gCLIOpts.networkPort;
         network_init(NT_CLIENT, false);
-    } else if (gCLIOpts.network == NT_SERVER) {
-        configNetworkSystem = NS_SOCKET;
-        configHostPort = gCLIOpts.networkPort;
+    } else if (gCLIOpts.network == NT_SERVER || gCLIOpts.coopnet) {
+        if (gCLIOpts.network == NT_SERVER) {
+            configNetworkSystem = NS_SOCKET;
+            configHostPort = gCLIOpts.networkPort;
+        } else {
+            configNetworkSystem = NS_COOPNET;
+            snprintf(configPassword, MAX_CONFIG_STRING, "%s", gCLIOpts.coopnetPassword);
+        }
 
         // horrible, hacky fix for mods that access marioObj straight away
         // best fix: host with the standard main menu method
@@ -620,6 +657,5 @@ int main(int argc, char *argv[]) {
 	else {
 		mainLoopFunc(NULL);
 	}
-
     return 0;
 }
